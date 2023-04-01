@@ -93,7 +93,11 @@ impl Server {
         Ok(())
     }
 
-    pub async fn run(&self) -> Result<(), Box<dyn Error>> {
+    pub async fn run(
+        &self, 
+        cert_path: &String,
+        key_path: &String
+    ) -> Result<(), Box<dyn Error>> {
         if self.socket.is_none() {
             return Err(Box::new(RunBeforeBindError))
         }
@@ -106,10 +110,10 @@ impl Server {
         let mut config = quiche::Config::new(quiche::PROTOCOL_VERSION).unwrap();
     
         config
-            .load_cert_chain_from_pem_file("example_cert/cert.crt")
+            .load_cert_chain_from_pem_file(cert_path)
             .unwrap();
         config
-            .load_priv_key_from_pem_file("example_cert/cert.key")
+            .load_priv_key_from_pem_file(key_path)
             .unwrap();
     
         config

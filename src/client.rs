@@ -91,7 +91,13 @@ impl Client {
      * CONNECT and SOCKS5 as implemented below. Similarly, UDP listening can be easily 
      * added if necessary.
      */
-    pub async fn run<F, Fut>(&mut self, server_addr: &String, mut stream_handler: F) -> Result<(), Box<dyn Error>> 
+    pub async fn run<F, Fut>(
+        &mut self, 
+        server_addr: &String, 
+        skip_verify: bool, 
+        ca: &String,  
+        mut stream_handler: F
+    ) -> Result<(), Box<dyn Error>> 
     where
         F: FnMut(TcpStream, UnboundedSender<ToSend>, Arc<Mutex<HashMap<u64, UnboundedSender<Content>>>>, Arc<Mutex<HashMap<u64, UnboundedSender<Content>>>>) -> Fut,
         Fut: Future<Output = ()> + Send + 'static,
@@ -119,8 +125,22 @@ impl Client {
     
         let mut config = quiche::Config::new(quiche::PROTOCOL_VERSION).unwrap();
         // TODO: *CAUTION*: this should not be set to `false` in production!!!
-        config.verify_peer(false);
-    
+
+        // match &env::args().nth(5).unwarp() as &str {
+        //     "ca" => {
+        //         config.verify_peer(true);
+        //         config.load_verify_locations_from_directory(&env::args().
+        //                                                     nth(5).
+        //                                                     unwrap_or_else(|| "ca.pem".to_string()))?;
+        //     },
+        //     "default" => config.verify_peer(false),
+        //     _ => config.verify_peer(false),
+        // }
+        if ca!="none" { 
+            config.load_verify_locations_from_file(ca); 
+        }
+        
+        config.verify_peer(!skip_verify);
         config.set_application_protos(quiche::h3::APPLICATION_PROTOCOL).unwrap();
         
         config.set_max_idle_timeout(1000);
@@ -143,7 +163,7 @@ impl Client {
         
         // Client connection.
         let local_addr = socket.local_addr().unwrap();
-        let mut conn = quiche::connect(url.domain(), &scid, local_addr, peer_addr, &mut config).expect("quic connection failed");
+        let mut conn = quiche::connect(url.domain(), &scid, local_addr, peer_addr, &mut config).expect("quic connection failed");;
         info!(
             "connecting to {:} from {:} with scid {}",
             peer_addr,
@@ -639,8 +659,8 @@ impl Http1Client {
         self.client.bind(bind_addr).await
     }
 
-    pub async fn run(&mut self, server_addr: &String) -> Result<(), Box<dyn Error>> {
-        self.client.run(server_addr, handle_http1_stream).await
+    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String) -> Result<(), Box<dyn Error>> {
+        self.client.run(server_addr, skip_verify, ca, handle_http1_stream).await
     }
 }
 
@@ -1042,8 +1062,8 @@ impl Socks5Client {
         self.client.bind(bind_addr).await
     }
 
-    pub async fn run(&mut self, server_addr: &String) -> Result<(), Box<dyn Error>> {
-        self.client.run(server_addr, handle_socks5_stream).await
+    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String) -> Result<(), Box<dyn Error>> {
+        self.client.run(server_addr, skip_verify, ca, handle_socks5_stream).await
     }
 }
 

@@ -660,7 +660,7 @@ impl Http1Client {
         self.client.bind(bind_addr).await
     }
 
-    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String, congestion_control: &String) -> Result<(), Box<dyn Error>> {
         self.client.run(server_addr, skip_verify, ca, congestion_control, handle_http1_stream).await
     }
 }
@@ -1063,7 +1063,7 @@ impl Socks5Client {
         self.client.bind(bind_addr).await
     }
 
-    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&mut self, server_addr: &String, skip_verify: bool, ca: &String, congestion_control: &String) -> Result<(), Box<dyn Error>> {
         self.client.run(server_addr, skip_verify, ca, congestion_control, handle_socks5_stream).await
     }
 }

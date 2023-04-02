@@ -96,7 +96,8 @@ impl Server {
     pub async fn run(
         &self, 
         cert_path: &String,
-        key_path: &String
+        key_path: &String,
+        congestion_control: &String
     ) -> Result<(), Box<dyn Error>> {
         if self.socket.is_none() {
             return Err(Box::new(RunBeforeBindError))
@@ -119,6 +120,7 @@ impl Server {
         config
             .set_application_protos(quiche::h3::APPLICATION_PROTOCOL)
             .unwrap();
+        config.set_cc_algorithm_name(congestion_control).unwrap();
     
         // TODO: allow custom configuration of the following parameters and also consider the defaults more carefully
         config.set_max_idle_timeout(1000);
